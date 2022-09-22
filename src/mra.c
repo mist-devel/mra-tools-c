@@ -288,21 +288,21 @@ void read_root(XMLNode *root, t_mra *mra) {
         XMLNode *node = root->children[i];
 
         if (strncmp(node->tag, "name", 5) == 0) {
-            mra->name = strndup(node->text, 1024);
+            mra->name = node->text ? strndup(node->text, 1024) : 0;
         } else if (strncmp(node->tag, "mratimestamp", 13) == 0) {
-            mra->mratimestamp = strndup(node->text, 1024);
+            mra->mratimestamp = node->text ? strndup(node->text, 1024) : 0;
         } else if (strncmp(node->tag, "mameversion", 12) == 0) {
-            mra->mameversion = strndup(node->text, 1024);
+            mra->mameversion = node->text ? strndup(node->text, 1024) : 0;
         } else if (strncmp(node->tag, "setname", 8) == 0) {
-            mra->setname = strndup(node->text, 1024);
+            mra->setname = node->text ? strndup(node->text, 1024) : 0;
         } else if (strncmp(node->tag, "year", 5) == 0) {
-            mra->year = strndup(node->text, 1024);
+            mra->year = node->text ? strndup(node->text, 1024) : 0;
         } else if (strncmp(node->tag, "manufacturer", 13) == 0) {
-            mra->manufacturer = strndup(node->text, 1024);
+            mra->manufacturer = node->text ? strndup(node->text, 1024) : 0;
         } else if (strncmp(node->tag, "rbf", 4) == 0) {
             read_rbf(node, &mra->rbf);
         } else if (strncmp(node->tag, "category", 9) == 0) {
-            string_list_add(&mra->categories, node->text);
+            if (node->text) string_list_add(&mra->categories, node->text);
         } else if (strncmp(node->tag, "switches", 9) == 0) {
             read_switches(node, &mra->switches);
         }
