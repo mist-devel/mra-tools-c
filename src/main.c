@@ -8,6 +8,8 @@
 #include "rom.h"
 #include "utils.h"
 
+#define MAX_ROM_FILENAME_SIZE 16
+
 // make vscode happy
 extern char *optarg;
 extern int optind, opterr, optopt;
@@ -158,7 +160,7 @@ void main(int argc, char **argv) {
                 rom_filename = get_filename(output_dir, rom_basename, "rom");
             }
         } else {
-            rom_basename = dos_clean_basename(mra.setname ? mra.setname : mra_basename, 0);
+            rom_basename = dos_clean_basename(mra.setname ? mra.setname : mra_basename, 0, MAX_ROM_FILENAME_SIZE);
             rom_filename = get_filename(output_dir ? output_dir : ".", rom_basename, "rom");
         }
 
