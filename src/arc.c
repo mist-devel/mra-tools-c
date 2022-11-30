@@ -10,6 +10,7 @@
 #define MAX_LINE_LENGTH 256
 #define MAX_CONTENT_LENGTH 25
 #define MAX_CONF_OPT_LENGTH 128
+#define MAX_RBF_NAME_LENGTH 32
 
 char *format_bits( t_mra* mra, t_dip *dip ) {
     char buffer[256] = "O";
@@ -99,7 +100,7 @@ int write_arc(t_mra *mra, char *filename) {
     // Write rbf
     if (mra->rbf.name) {
         char *rbf = str_toupper(mra->rbf.alt_name ? mra->rbf.alt_name : mra->rbf.name);
-        if (strnlen(rbf, 32) > 8) printf("warning: RBF file name may be too long for MiST\n");
+        if (strnlen(rbf, MAX_LINE_LENGTH) > MAX_RBF_NAME_LENGTH) printf("warning: RBF file name may be too long for MiST\n");
 
         n = snprintf(buffer, MAX_LINE_LENGTH, "RBF=%s\n", rbf);
         if (n >= MAX_LINE_LENGTH) printf("%s:%d: warning: line was truncated while writing in ARC file!\n", __FILE__, __LINE__);
