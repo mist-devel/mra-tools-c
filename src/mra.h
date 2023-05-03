@@ -69,10 +69,16 @@ typedef struct s_switches
     char *page_name;
 } t_switches;
 
+typedef struct s_buttons {
+    char *names;
+    char *defaults;
+} t_buttons;
+
 typedef struct s_rbf {
     char *name;
     char *alt_name;
 } t_rbf;
+
 
 typedef struct s_mra {
     XMLDoc _xml_doc;
@@ -87,7 +93,8 @@ typedef struct s_mra {
     t_rbf rbf;
     t_string_list categories;
     t_switches switches;
-  
+    t_buttons buttons;
+
     t_rom *roms;
     int n_roms;
 } t_mra;

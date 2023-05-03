@@ -147,6 +147,12 @@ int write_arc(t_mra *mra, char *filename) {
             printf("warning (%s): \"%s\" dip setting skipped (unused)\n", mra->setname, dip->name);
         }
     }
+
+    if (mra->buttons.names) {
+        n = snprintf(buffer, MAX_LINE_LENGTH, "BUTTONS=\"%s\"\n", mra->buttons.names);
+        if (n >= MAX_LINE_LENGTH) printf("%s:%d: warning: line was truncated while writing in ARC file!\n", __FILE__, __LINE__);
+        fwrite(buffer, 1, n, out);
+    }
     fclose(out);
     return 0;
 }

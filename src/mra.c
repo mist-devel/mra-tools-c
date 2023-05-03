@@ -255,6 +255,19 @@ int read_switches(XMLNode *node, t_switches *switches) {
     return 0;
 }
 
+void read_buttons(XMLNode *node, t_buttons *buttons) {
+    int i;
+
+    memset(buttons, 0, sizeof(t_buttons));
+    for (i = 0; i < node->n_attributes; i++) {
+        if (strncmp(node->attributes[i].name, "default", 7) == 0) {
+            buttons->defaults = strndup(node->attributes[i].value, 256);
+        } else if (strncmp(node->attributes[i].name, "names", 5) == 0) {
+            buttons->names = strndup(node->attributes[i].value, 256);
+        }
+    }
+}
+
 void read_roms(XMLNode *node, t_rom **roms, int *n_roms) {
     int i;
 
@@ -305,7 +318,10 @@ void read_root(XMLNode *root, t_mra *mra) {
             if (node->text) string_list_add(&mra->categories, node->text);
         } else if (strncmp(node->tag, "switches", 9) == 0) {
             read_switches(node, &mra->switches);
+        } else if (strncmp(node->tag, "buttons", 9) == 0) {
+            read_buttons(node, &mra->buttons);
         }
+
     }
 }
 
@@ -382,6 +398,7 @@ int mra_dump(t_mra *mra) {
     for (i = 0; i < mra->switches.n_dips; i++) {
         printf("  dip[%d]: %s,%s,%s\n", i, mra->switches.dips[i].bits, mra->switches.dips[i].name, mra->switches.dips[i].ids);
     }
+    printf("buttons: default=%s, names=%s\n", mra->buttons.defaults, mra->buttons.names);
 
     for (i = 0; i < mra->n_roms; i++) {
         int j;
