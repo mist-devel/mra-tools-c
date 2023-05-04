@@ -260,9 +260,9 @@ void read_buttons(XMLNode *node, t_buttons *buttons) {
 
     memset(buttons, 0, sizeof(t_buttons));
     for (i = 0; i < node->n_attributes; i++) {
-        if (strncmp(node->attributes[i].name, "default", 7) == 0) {
+        if (strncmp(node->attributes[i].name, "default", 8) == 0) {
             buttons->defaults = strndup(node->attributes[i].value, 256);
-        } else if (strncmp(node->attributes[i].name, "names", 5) == 0) {
+        } else if (strncmp(node->attributes[i].name, "names", 6) == 0) {
             buttons->names = strndup(node->attributes[i].value, 256);
         }
     }
@@ -318,7 +318,7 @@ void read_root(XMLNode *root, t_mra *mra) {
             if (node->text) string_list_add(&mra->categories, node->text);
         } else if (strncmp(node->tag, "switches", 9) == 0) {
             read_switches(node, &mra->switches);
-        } else if (strncmp(node->tag, "buttons", 9) == 0) {
+        } else if (strncmp(node->tag, "buttons", 8) == 0) {
             read_buttons(node, &mra->buttons);
         }
 
