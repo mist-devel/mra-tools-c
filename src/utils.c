@@ -17,6 +17,9 @@ static int read_hex_char(char c) {
 
 // strndup() is not available on Windows
 char *strndup(const char *s1, size_t n) {
+    size_t l = strlen(s1);
+    if (l < n)
+        n = l;
     char *copy = (char *)malloc(n + 1);
     memcpy(copy, s1, n);
     copy[n] = 0;
