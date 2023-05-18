@@ -43,7 +43,7 @@ char *dos_clean_basename(char *filename, int uppercase, int maxlen) {
     if(strnlen(filename, 1024) > maxlen) {
         memcpy(clean_name, filename, maxlen-3);                                    // str_left(filename, maxlen-3)
         memcpy(clean_name + maxlen-3, filename + strnlen(filename, 1024) - 3, 3);  // str_right(filename, 3)
-        clean_name[8] = '\0';
+        clean_name[maxlen] = '\0';
     } else {
         strcpy(clean_name, filename);
     }
