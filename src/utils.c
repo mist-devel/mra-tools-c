@@ -36,9 +36,8 @@ char *replace_backslash(char *path) {
 }
 
 char *dos_clean_basename(char *filename, int uppercase, int maxlen) {
-    char bad_chars[] = " /\\()[]{}.!@%^*~<>|:?'\"";
+    static const char bad_chars[] = " /\\()[]{}.!@%^*~<>|:?'\"";
     char *clean_name = (char *)malloc(maxlen + 1);
-    int i;
 
     if(strnlen(filename, 1024) > maxlen) {
         memcpy(clean_name, filename, maxlen-3);                                    // str_left(filename, maxlen-3)
@@ -51,11 +50,9 @@ char *dos_clean_basename(char *filename, int uppercase, int maxlen) {
     if (uppercase)
         clean_name = str_toupper(clean_name);
 
-    for (i = 0; i < strlen(bad_chars); i++) {
-        char *p;
-        if (p = strchr(clean_name, bad_chars[i])) {
-            *p = '_';
-        }
+    char *p = clean_name;
+    while ((p = strpbrk(p, bad_chars)) != NULL) {
+        *(p++) = '_';
     }
 
     return clean_name;
