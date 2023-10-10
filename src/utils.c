@@ -17,6 +17,9 @@ static int read_hex_char(char c) {
 
 // strndup() is not available on Windows
 char *strndup(const char *s1, size_t n) {
+    size_t l = strlen(s1);
+    if (l < n)
+        n = l;
     char *copy = (char *)malloc(n + 1);
     memcpy(copy, s1, n);
     copy[n] = 0;
@@ -33,14 +36,13 @@ char *replace_backslash(char *path) {
 }
 
 char *dos_clean_basename(char *filename, int uppercase, int maxlen) {
-    char bad_chars[] = " /\\()[]{}.!@%^*~<>|:?'\"";
+    static const char bad_chars[] = " /\\()[]{}.!@%^*~<>|:?'\"";
     char *clean_name = (char *)malloc(maxlen + 1);
-    int i;
 
     if(strnlen(filename, 1024) > maxlen) {
         memcpy(clean_name, filename, maxlen-3);                                    // str_left(filename, maxlen-3)
         memcpy(clean_name + maxlen-3, filename + strnlen(filename, 1024) - 3, 3);  // str_right(filename, 3)
-        clean_name[8] = '\0';
+        clean_name[maxlen] = '\0';
     } else {
         strcpy(clean_name, filename);
     }
@@ -48,11 +50,9 @@ char *dos_clean_basename(char *filename, int uppercase, int maxlen) {
     if (uppercase)
         clean_name = str_toupper(clean_name);
 
-    for (i = 0; i < strlen(bad_chars); i++) {
-        char *p;
-        if (p = strchr(clean_name, bad_chars[i])) {
-            *p = '_';
-        }
+    char *p = clean_name;
+    while ((p = strpbrk(p, bad_chars)) != NULL) {
+        *(p++) = '_';
     }
 
     return clean_name;
