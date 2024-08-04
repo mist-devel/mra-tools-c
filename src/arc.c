@@ -78,13 +78,13 @@ int write_arc(t_mra *mra, char *filename) {
     int mod = 0;
 
     /* let's be strict about mod:
-        it has to be a single byte in a single part in a ROM with index = "1".
+        use only the first byte in a single part in a ROM with index = "1".
     */
     i = mra_get_rom_by_index(mra, 1, 0);
     if (i != -1 &&
         mra->roms[i].n_parts == 1 &&
         !mra->roms[i].parts[0].is_group &&
-        mra->roms[i].parts[0].p.data_length == 1) {
+        mra->roms[i].parts[0].p.data_length >= 1) {
         mod = mra->roms[i].parts[0].p.data[0];
     }
 
