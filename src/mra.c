@@ -294,6 +294,18 @@ void read_rbf(XMLNode *node, t_rbf *rbf) {
     rbf->name = strndup(node->text, 1024);
 }
 
+void read_nvram(XMLNode *node, t_nvram *nvram) {
+    memset(nvram, 0, sizeof(t_nvram));
+    for (int i = 0; i < node->n_attributes; i++) {
+        XMLAttribute *attr = &node->attributes[i];
+        if (strcmp(attr->name, "index") == 0) {
+            nvram->index = strtol(attr->value, NULL, 0);
+        } else if (strcmp(attr->name, "size") == 0) {
+            nvram->size = strtol(attr->value, NULL, 0);
+        }
+    }
+}
+
 void read_root(XMLNode *root, t_mra *mra) {
     int i;
 
@@ -314,6 +326,8 @@ void read_root(XMLNode *root, t_mra *mra) {
             mra->manufacturer = node->text ? strndup(node->text, 1024) : 0;
         } else if (strncmp(node->tag, "rbf", 4) == 0) {
             read_rbf(node, &mra->rbf);
+        } else if (strncmp(node->tag, "nvram", 5) == 0) {
+            read_nvram(node, &mra->nvram);
         } else if (strncmp(node->tag, "category", 9) == 0) {
             if (node->text) string_list_add(&mra->categories, node->text);
         } else if (strncmp(node->tag, "switches", 9) == 0) {

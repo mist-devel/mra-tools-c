@@ -40,7 +40,9 @@ void print_version() {
 }
 
 void main(int argc, char **argv) {
+    char *ram_basename = NULL;
     char *rom_filename = NULL;
+    char *ram_filename = NULL;
     char *arc_filename = NULL;
     char *output_dir = NULL;
     char *mra_filename;
@@ -164,6 +166,9 @@ void main(int argc, char **argv) {
             rom_filename = get_filename(output_dir ? output_dir : ".", rom_basename, "rom");
         }
 
+        ram_basename = dos_clean_basename(mra.setname ? mra.setname : mra_basename, 0, MAX_ROM_FILENAME_SIZE);
+        ram_filename = get_filename(output_dir ? output_dir : ".", ram_basename, "ram");
+
         if (trace > 0) printf("MRA loaded...\n");
 
         if (dump_mra) {
@@ -196,14 +201,24 @@ void main(int argc, char **argv) {
             }
             if( dump_rom ) {
                 if (trace > 0) printf("creating ROM...\n");
-                res = write_rom(&mra, dirs, rom_filename);
+                res = write_rom0(&mra, dirs, rom_filename);
                 if (res != 0) {
                     printf("Writing ROM failed with error code: %d\n", res);
                     exit(-1);
                 }
+
+                if (trace > 0) printf("creating RAM...\n");
+                res = write_nvram(&mra, dirs, ram_filename);
+                if (res != 0) {
+                    printf("Writing RAM failed with error code: %d\n", res);
+                    exit(-1);
+                }
+
             }
             free( rom_filename );
             rom_filename = NULL;
+            free( ram_filename );
+            ram_filename = NULL;
         }
     }
     if (verbose) {

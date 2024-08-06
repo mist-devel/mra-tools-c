@@ -79,6 +79,10 @@ typedef struct s_rbf {
     char *alt_name;
 } t_rbf;
 
+typedef struct s_nvram {
+    long index;
+    long size;
+} t_nvram;
 
 typedef struct s_mra {
     XMLDoc _xml_doc;
@@ -94,6 +98,7 @@ typedef struct s_mra {
     t_string_list categories;
     t_switches switches;
     t_buttons buttons;
+    t_nvram nvram;
 
     t_rom *roms;
     int n_roms;

@@ -298,19 +298,9 @@ static char *get_zip_filename(char *filename, t_string_list *dirs) {
     return NULL;
 }
 
-int write_rom(t_mra *mra, t_string_list *dirs, char *rom_filename) {
+int write_rom(t_rom *rom, t_string_list *dirs, char *rom_filename) {
     char *zip_filename;
-    t_rom *rom;
-    int rom_index=0;
     int i, res;
-
-    // Look for first ROM with index 0
-    rom_index = mra_get_next_rom0(mra, rom_index);
-    if (rom_index == -1) {
-        printf("%s:%d: error: ROM0 not found in MRA.\n", __FILE__, __LINE__);
-        return -1;
-    }
-    rom = mra->roms + rom_index;
 
     // Load all zip files
     for (i = 0; i < rom->zip.n_elements; i++) {
@@ -386,4 +376,34 @@ int write_rom(t_mra *mra, t_string_list *dirs, char *rom_filename) {
         }
     }
     return 0;
+
+}
+
+int write_rom0(t_mra *mra, t_string_list *dirs, char *rom_filename) {
+    t_rom *rom;
+    int rom_index=0;
+
+    // Look for first ROM with index 0
+    rom_index = mra_get_next_rom0(mra, rom_index);
+    if (rom_index == -1) {
+        printf("%s:%d: error: ROM0 not found in MRA.\n", __FILE__, __LINE__);
+        return -1;
+    }
+    rom = mra->roms + rom_index;
+    return (write_rom(rom, dirs, rom_filename));
+}
+
+int write_nvram(t_mra *mra, t_string_list *dirs, char *ram_filename) {
+    t_rom *rom;
+    int rom_index=0;
+
+    if (mra->nvram.size != 0)
+        rom_index = mra->nvram.index;
+    else
+        return 0;
+
+    rom_index =  mra_get_rom_by_index(mra, rom_index, 0);
+    if (rom_index == -1) return 0;
+    rom = mra->roms + rom_index;
+    return (write_rom(rom, dirs, ram_filename));
 }
