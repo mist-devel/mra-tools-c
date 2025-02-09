@@ -63,7 +63,7 @@ void main(int argc, char **argv) {
     // Looks bad but mkfs does it so why not me ?
     if (argc == 2 && !strcmp(argv[1], "-v")) {
         print_version();
-        exit(0);
+        exit(EXIT_SUCCESS);
     }
 
     int opt;
@@ -98,22 +98,22 @@ void main(int argc, char **argv) {
                 break;
             case 'h':
                 print_usage();
-                exit(0);
+                exit(EXIT_SUCCESS);
             case ':':
                 printf("option needs a value\n");
                 print_usage();
-                exit(-1);
+                exit(EXIT_FAILURE);
 
             case '?':
                 printf("unknown option: %c\n", optopt);
                 print_usage();
-                exit(-1);
+                exit(EXIT_FAILURE);
         }
     }
 
     if (optind == argc) {
         print_usage();
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
 
     if( argc-optind > 1 ) {
@@ -129,7 +129,7 @@ void main(int argc, char **argv) {
         mra_filename = replace_backslash(strndup(argv[name_idx], 1024));
         if (!file_exists(mra_filename)) {
             printf("error: file not found (%s)\n", mra_filename);
-            exit(-1);
+            exit(EXIT_FAILURE);
         }
         if (trace > 0)
             printf("mra: %s\n", mra_filename);
@@ -152,7 +152,7 @@ void main(int argc, char **argv) {
         }
 
         if (mra_load(mra_filename, &mra)) {
-            exit(-1);
+            exit(EXIT_FAILURE);
         }
 
         mra_basename = get_basename(mra_filename, 1);
@@ -195,7 +195,7 @@ void main(int argc, char **argv) {
                 res = write_arc(&mra, arc_filename);
                 if (res != 0) {
                     printf("Writing ARC file failed with error code: %d\n. Retry without -A if you still want to create the ROM file.\n", res);
-                    exit(-1);
+                    exit(EXIT_FAILURE);
                 }
                 arc_filename = NULL;
             }
@@ -204,14 +204,14 @@ void main(int argc, char **argv) {
                 res = write_rom0(&mra, dirs, rom_filename);
                 if (res != 0) {
                     printf("Writing ROM failed with error code: %d\n", res);
-                    exit(-1);
+                    exit(EXIT_FAILURE);
                 }
 
                 if (trace > 0) printf("creating RAM...\n");
                 res = write_nvram(&mra, dirs, ram_filename);
                 if (res != 0) {
                     printf("Writing RAM failed with error code: %d\n", res);
-                    exit(-1);
+                    exit(EXIT_FAILURE);
                 }
 
             }
@@ -224,4 +224,5 @@ void main(int argc, char **argv) {
     if (verbose) {
         printf("done!\n");
     }
+    exit(EXIT_SUCCESS);
 }
