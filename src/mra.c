@@ -232,7 +232,7 @@ int read_switches(XMLNode *node, t_switches *switches) {
                temp++;
             } 
             n = sscanf(attr->value, "%X,%X,%X,%X", &a, &b, &c, &d);
-            if (n-- > 0) switches->defaults |= (a & 0xff);
+            if (n-- > 0) switches->defaults |= a;
             if (n-- > 0) switches->defaults |= ((b & 0xff) << 8);
             if (n-- > 0) switches->defaults |= ((c & 0xff) << 16);
             if (n-- > 0) switches->defaults |= ((d & 0xff) << 24);
