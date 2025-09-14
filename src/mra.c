@@ -205,8 +205,10 @@ void read_dip_switch(XMLNode *node, t_dip *dip_switch) {
             dip_switch->bits = strndup(node->attributes[i].value, 256);
         } else if (strncmp(node->attributes[i].name, "name", 5) == 0) {
             dip_switch->name = strndup(node->attributes[i].value, 256);
-        } else if (strncmp(node->attributes[i].name, "ids", 5) == 0) {
+        } else if (strncmp(node->attributes[i].name, "ids", 4) == 0) {
             dip_switch->ids = strndup(node->attributes[i].value, 256);
+        } else if (strncmp(node->attributes[i].name, "values", 7) == 0) {
+            dip_switch->values = strndup(node->attributes[i].value, 256);
         }
     }
 }

@@ -11,6 +11,54 @@
 #define MAX_CONTENT_LENGTH 25
 #define MAX_CONF_OPT_LENGTH 128
 #define MAX_RBF_NAME_LENGTH 32
+#define MAX_VALUES 16
+
+int parse_values( const char *values, int *order ) {
+    const char *p = values;
+    const char *o = values;
+    int i = 0;
+    while(1) {
+        if (*p == ',' || *p == 0) {
+            if (i >= MAX_VALUES) {
+                printf("error: more than '%d' dip values.\n", MAX_VALUES);
+                return 0;
+            }
+            unsigned int v = strtol(o, NULL, 10);
+            if (v >= MAX_VALUES) {
+                printf("error in dip values: '%d' exceeds '%d'.\n", v, MAX_VALUES);
+                return 0;
+            }
+            order[i++] = v;
+            if (*p == 0) return i;
+            o = p+1;
+        }
+        p++;
+    }
+}
+
+char *substrcpy( char *d, const char *s, char idx ) {
+    char p = 0;
+
+    while(*s) {
+        if((p == idx) && *s && (*s != ','))
+            *d++ = *s;
+
+        if(*s == ',')
+            p++;
+
+        s++;
+    }
+    *d = 0;
+    return d;
+}
+
+void reorder_ids( const char *ids, const int *order, int orders, char *dest ) {
+    char idx;
+    for (int i = 0; i < orders; i++) {
+        dest = substrcpy(dest, ids, order[i]);
+        if (i != orders-1) *dest++=',';
+    }
+}
 
 char *format_bits( t_mra* mra, t_dip *dip ) {
     char buffer[256] = "O";
@@ -133,7 +181,12 @@ int write_arc(t_mra *mra, char *filename) {
                     printf("warning (%s): dip_content too long for MiST (%s):\n\t%s\t%s\n\n", mra->setname, mra->name, dip->name, dip->ids);
                     continue;
                 }
-                n = snprintf(buffer, MAX_LINE_LENGTH, "CONF=\"%s,%s,%s\"\n", format_bits( mra, dip ), dip->name, dip->ids);
+                int order[MAX_VALUES];
+                char reordered_ids[MAX_LINE_LENGTH];
+                int orders = 0;
+                if (dip->values) orders = parse_values( dip->values, order );
+                if (orders) reorder_ids( dip->ids, order, orders, reordered_ids );
+                n = snprintf(buffer, MAX_LINE_LENGTH, "CONF=\"%s,%s,%s\"\n", format_bits( mra, dip ), dip->name, orders ? reordered_ids : dip->ids);
                 strnlen(dip->ids, MAX_LINE_LENGTH);
             } else {
                 n = snprintf(buffer, MAX_LINE_LENGTH, "CONF=\"%s,%s\"\n", format_bits( mra, dip ), dip->name);

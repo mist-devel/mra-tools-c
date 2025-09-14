@@ -57,6 +57,7 @@ typedef struct s_dip
     char *bits;
     char *name;
     char *ids;
+    char *values;
 } t_dip;
 
 typedef struct s_switches
