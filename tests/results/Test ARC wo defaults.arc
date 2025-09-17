@@ -1,7 +1,7 @@
 [ARC]
 RBF=TEST_ARC
 MOD=10
-NAME=NOROMAME
+NAME=NOROMNAME
 CONF="T5,Soft Reset"
 CONF="OF,Cabinet,Cocktail,Upright"
 CONF="OIJ,Lives,1,2,3,5"
