@@ -6,6 +6,14 @@
 
 #include "utils.h"
 
+static void store_node(char **dest, const char *text) {
+    if (*dest) free(*dest);
+    if (text)
+        *dest = strndup(text, 1024);
+    else
+        *dest = 0;
+}
+
 int read_patch(XMLNode *node, t_patch *patch) {
     int j;
 
@@ -47,6 +55,22 @@ void get_pattern_from_map(char *map, uint8_t **pattern, int *map_index) {
     if (trace > 0) printf("map=0x%s => pattern=\"%s\"\n", map, *pattern);
 }
 
+static void free_parts(t_part *parts, int num) {
+    int i;
+
+    for (i = 0; i < num; i++) {
+        if (parts[i].is_group) {
+            free_parts(parts[i].g.parts, parts[i].g.n_parts);
+        } else {
+            if (parts[i].p.name)    free(parts[i].p.name);
+            if (parts[i].p.zip)     free(parts[i].p.zip);
+            if (parts[i].p.pattern) free(parts[i].p.pattern);
+            if (parts[i].p.data)    free(parts[i].p.data);
+        }
+    }
+    free(parts);
+}
+
 int read_part(XMLNode *node, t_part *part, int parent_index) {
     int j;
 
@@ -58,9 +82,9 @@ int read_part(XMLNode *node, t_part *part, int parent_index) {
             // CRC is read as hexa no matter what
             part->p.crc32 = strtoul(node->attributes[j].value, NULL, 16);
         } else if (strncmp(node->attributes[j].name, "name", 5) == 0) {
-            part->p.name = strndup(node->attributes[j].value, 256);
+            store_node(&part->p.name, node->attributes[j].value);
         } else if (strncmp(node->attributes[j].name, "zip", 4) == 0) {
-            part->p.zip = strndup(node->attributes[j].value, 256);
+            store_node(&part->p.zip, node->attributes[j].value);
         } else if (strncmp(node->attributes[j].name, "repeat", 7) == 0) {
             // repeat can be decimal or hexa with 0x prefix
             part->p.repeat = strtoul(node->attributes[j].value, NULL, 0);
@@ -179,7 +203,7 @@ void read_rom(XMLNode *node, t_rom *rom) {
             string_list_add(&rom->zip, node->attributes[j].value);
         } else if (strncmp(node->attributes[j].name, "md5", 4) == 0) {
             if (strncmp(node->attributes[j].value, "none", 256) != 0) {
-                rom->md5 = strndup(node->attributes[j].value, 256);
+                store_node(&rom->md5, node->attributes[j].value);
             }
         } else if (strncmp(node->attributes[j].name, "type", 5) == 0) {
             string_list_add(&rom->type, node->attributes[j].value);
@@ -196,19 +220,31 @@ void read_rom(XMLNode *node, t_rom *rom) {
     }
 }
 
+static void free_switches(t_switches *switches) {
+    int i;
+    if (switches->page_name) free(switches->page_name);
+    for (i = 0; i < switches->n_dips; i++) {
+        if (switches->dips[i].bits)   free(switches->dips[i].bits);
+        if (switches->dips[i].name)   free(switches->dips[i].name);
+        if (switches->dips[i].ids)    free(switches->dips[i].ids);
+        if (switches->dips[i].values) free(switches->dips[i].values);
+    }
+    if (switches->dips) free(switches->dips);
+}
+
 void read_dip_switch(XMLNode *node, t_dip *dip_switch) {
     int i;
 
     memset(dip_switch, 0, sizeof(t_dip));
     for (i = 0; i < node->n_attributes; i++) {
         if (strncmp(node->attributes[i].name, "bits", 5) == 0) {
-            dip_switch->bits = strndup(node->attributes[i].value, 256);
+            store_node(&dip_switch->bits, node->attributes[i].value);
         } else if (strncmp(node->attributes[i].name, "name", 5) == 0) {
-            dip_switch->name = strndup(node->attributes[i].value, 256);
+            store_node(&dip_switch->name, node->attributes[i].value);
         } else if (strncmp(node->attributes[i].name, "ids", 4) == 0) {
-            dip_switch->ids = strndup(node->attributes[i].value, 256);
+            store_node(&dip_switch->ids, node->attributes[i].value);
         } else if (strncmp(node->attributes[i].name, "values", 7) == 0) {
-            dip_switch->values = strndup(node->attributes[i].value, 256);
+            store_node(&dip_switch->values, node->attributes[i].value);
         }
     }
 }
@@ -216,6 +252,7 @@ void read_dip_switch(XMLNode *node, t_dip *dip_switch) {
 int read_switches(XMLNode *node, t_switches *switches) {
     int i;
 
+    free_switches(switches);
     memset(switches, 0, sizeof(t_switches));
 
     // Read all attributes
@@ -241,7 +278,7 @@ int read_switches(XMLNode *node, t_switches *switches) {
         } else if (strncmp(attr->name, "page_id", 8) == 0) {
             switches->page_id = strtol(attr->value, NULL, 0);
         } else if (strncmp(attr->name, "page_name", 10) == 0) {
-            switches->page_name = strndup(attr->value, 26);
+            store_node(&switches->page_name, attr->value);
         }
     }
 
@@ -260,12 +297,15 @@ int read_switches(XMLNode *node, t_switches *switches) {
 void read_buttons(XMLNode *node, t_buttons *buttons) {
     int i;
 
+    if (buttons->defaults) free(buttons->defaults);
+    if (buttons->names) free(buttons->names);
+
     memset(buttons, 0, sizeof(t_buttons));
     for (i = 0; i < node->n_attributes; i++) {
         if (strncmp(node->attributes[i].name, "default", 8) == 0) {
-            buttons->defaults = strndup(node->attributes[i].value, 256);
+            store_node(&buttons->defaults, node->attributes[i].value);
         } else if (strncmp(node->attributes[i].name, "names", 6) == 0) {
-            buttons->names = strndup(node->attributes[i].value, 256);
+            store_node(&buttons->names, node->attributes[i].value);
         }
     }
 }
@@ -284,16 +324,19 @@ void read_roms(XMLNode *node, t_rom **roms, int *n_roms) {
     }
 }
 
+
 void read_rbf(XMLNode *node, t_rbf *rbf) {
+    if (rbf->name) free(rbf->name);
+    if (rbf->alt_name) free(rbf->alt_name);
     memset(rbf, 0, sizeof(t_rbf));
 
     for (int i = 0; i < node->n_attributes; i++) {
         XMLAttribute *attr = &node->attributes[i];
         if (strcmp(attr->name, "alt") == 0) {
-            rbf->alt_name = strndup(attr->value, 9);
+            store_node(&rbf->alt_name, attr->value);
         }
     }
-    rbf->name = strndup(node->text, 1024);
+    store_node(&rbf->name, node->text);
 }
 
 void read_nvram(XMLNode *node, t_nvram *nvram) {
@@ -315,17 +358,17 @@ void read_root(XMLNode *root, t_mra *mra) {
         XMLNode *node = root->children[i];
 
         if (strncmp(node->tag, "name", 5) == 0) {
-            mra->name = node->text ? strndup(node->text, 1024) : 0;
+            store_node(&mra->name, node->text);
         } else if (strncmp(node->tag, "mratimestamp", 13) == 0) {
-            mra->mratimestamp = node->text ? strndup(node->text, 1024) : 0;
+            store_node(&mra->mratimestamp, node->text);
         } else if (strncmp(node->tag, "mameversion", 12) == 0) {
-            mra->mameversion = node->text ? strndup(node->text, 1024) : 0;
+            store_node(&mra->mameversion, node->text);
         } else if (strncmp(node->tag, "setname", 8) == 0) {
-            mra->setname = node->text ? strndup(node->text, 1024) : 0;
+            store_node(&mra->setname, node->text);
         } else if (strncmp(node->tag, "year", 5) == 0) {
-            mra->year = node->text ? strndup(node->text, 1024) : 0;
+            store_node(&mra->year, node->text);
         } else if (strncmp(node->tag, "manufacturer", 13) == 0) {
-            mra->manufacturer = node->text ? strndup(node->text, 1024) : 0;
+            store_node(&mra->manufacturer, node->text);
         } else if (strncmp(node->tag, "rbf", 4) == 0) {
             read_rbf(node, &mra->rbf);
         } else if (strncmp(node->tag, "nvram", 5) == 0) {
@@ -463,22 +506,6 @@ int mra_get_rom_by_index(t_mra *mra, int index, int start_pos) {
     return -1;  // ROM not found
 }
 
-static void free_parts(t_part *parts, int num) {
-    int i;
-
-    for (i = 0; i < num; i++) {
-        if (parts[i].is_group) {
-            free_parts(parts[i].g.parts, parts[i].g.n_parts);
-        } else {
-            if (parts[i].p.name)    free(parts[i].p.name);
-            if (parts[i].p.zip)     free(parts[i].p.zip);
-            if (parts[i].p.pattern) free(parts[i].p.pattern);
-            if (parts[i].p.data)    free(parts[i].p.data);
-        }
-    }
-    free(parts);
-}
-
 void mra_free(t_mra *mra) {
     if (!mra) return;
 
@@ -511,13 +538,6 @@ void mra_free(t_mra *mra) {
     }
     if (mra->roms) free(mra->roms);
 
-    if (mra->switches.page_name) free(mra->switches.page_name);
-    for (i = 0; i < mra->switches.n_dips; i++) {
-        if (mra->switches.dips[i].bits)   free(mra->switches.dips[i].bits);
-        if (mra->switches.dips[i].name)   free(mra->switches.dips[i].name);
-        if (mra->switches.dips[i].ids)    free(mra->switches.dips[i].ids);
-        if (mra->switches.dips[i].values) free(mra->switches.dips[i].values);
-    }
-    if (mra->switches.dips) free(mra->switches.dips);
+    free_switches(&mra->switches);
 
 }
