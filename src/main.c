@@ -45,9 +45,10 @@ void main(int argc, char **argv) {
     char *ram_filename = NULL;
     char *arc_filename = NULL;
     char *output_dir = NULL;
+    char *mame_dir = NULL;
     char *mra_filename;
     char *mra_basename;
-    t_string_list *dirs = string_list_new(NULL);
+    t_string_list *dirs;
     int i, res;
     int dump_mra = 0;
     int dump_rom = -1;
@@ -82,7 +83,7 @@ void main(int argc, char **argv) {
                 create_arc = -1;
                 break;
             case 'z':
-                string_list_add(dirs, replace_backslash(optarg));
+                mame_dir = replace_backslash(optarg);
                 break;
             case 'O':
                 output_dir = replace_backslash(strndup(optarg, 1024));
@@ -134,9 +135,13 @@ void main(int argc, char **argv) {
         if (trace > 0)
             printf("mra: %s\n", mra_filename);
 
+        dirs = string_list_new(NULL);
+        if (mame_dir) string_list_add(dirs, mame_dir);
+
         char *mra_path = get_path(mra_filename);
         if (mra_path) {
             string_list_add(dirs, mra_path);
+            free(mra_path);
         }
         string_list_add(dirs, ".");
 
@@ -165,9 +170,9 @@ void main(int argc, char **argv) {
             rom_basename = dos_clean_basename(mra.setname ? mra.setname : mra_basename, 0, MAX_ROM_FILENAME_SIZE);
             rom_filename = get_filename(output_dir ? output_dir : ".", rom_basename, "rom");
         }
-
         ram_basename = dos_clean_basename(mra.setname ? mra.setname : mra_basename, 0, MAX_ROM_FILENAME_SIZE);
         ram_filename = get_filename(output_dir ? output_dir : ".", ram_basename, "ram");
+        free(ram_basename);
 
         if (trace > 0) printf("MRA loaded...\n");
 
@@ -180,7 +185,9 @@ void main(int argc, char **argv) {
 
                 if (arc_filename) {
                     if (output_dir) {
-                        arc_filename = get_filename(output_dir, get_basename(arc_filename, 1), "arc");
+                        char *arc_basename = get_basename(arc_filename, 1);
+                        free(arc_filename);
+                        arc_filename = get_filename(output_dir, arc_basename, "arc");
                     }
                     make_fat32_compatible(arc_filename, 0);
                 } else {
@@ -197,6 +204,7 @@ void main(int argc, char **argv) {
                     printf("Writing ARC file failed with error code: %d\n. Retry without -A if you still want to create the ROM file.\n", res);
                     exit(EXIT_FAILURE);
                 }
+                free(arc_filename);
                 arc_filename = NULL;
             }
             if( dump_rom ) {
@@ -220,6 +228,16 @@ void main(int argc, char **argv) {
             free( ram_filename );
             ram_filename = NULL;
         }
+        free( rom_basename );
+        rom_basename = NULL;
+        free( mra_filename );
+        mra_filename = NULL;
+        free( mra_basename );
+        mra_basename = NULL;
+        mra_free(&mra);
+
+        string_list_free(dirs);
+        free(dirs);
     }
     if (verbose) {
         printf("done!\n");

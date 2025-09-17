@@ -159,10 +159,13 @@ int write_arc(t_mra *mra, char *filename) {
             if (n >= MAX_LINE_LENGTH) printf("%s:%d: warning: line was truncated while writing in ARC file!\n", __FILE__, __LINE__);
             fwrite(buffer, 1, n, out);
         }
+        free(rbf);
     }
-    n = snprintf(buffer, MAX_LINE_LENGTH, "NAME=%s\n", str_toupper(rom_basename));
+    char *basename = str_toupper(rom_basename);
+    n = snprintf(buffer, MAX_LINE_LENGTH, "NAME=%s\n", basename);
     if (n >= MAX_LINE_LENGTH) printf("%s:%d: warning: line was truncated while writing in ARC file!\n", __FILE__, __LINE__);
     fwrite(buffer, 1, n, out);
+    free(basename);
 
     if (mra->switches.n_dips && mra->switches.defaults) {
         n = snprintf(buffer, MAX_LINE_LENGTH, "DEFAULT=0x%llX\n", mra->switches.defaults << mra->switches.base);
@@ -175,7 +178,9 @@ int write_arc(t_mra *mra, char *filename) {
 
     for (i = 0; i < mra->switches.n_dips; i++) {
         t_dip *dip = mra->switches.dips + i;
-        if (!strstr(str_tolower(dip->name), "unused")) {
+        char *dipname = str_tolower(dip->name);
+        if (!strstr(dipname, "unused")) {
+            free(dipname);
             if (dip->ids) {
                 if (check_ids_len(dip)) {
                     printf("warning (%s): dip_content too long for MiST (%s):\n\t%s\t%s\n\n", mra->setname, mra->name, dip->name, dip->ids);
@@ -186,8 +191,9 @@ int write_arc(t_mra *mra, char *filename) {
                 int orders = 0;
                 if (dip->values) orders = parse_values( dip->values, order );
                 if (orders) reorder_ids( dip->ids, order, orders, reordered_ids );
-                n = snprintf(buffer, MAX_LINE_LENGTH, "CONF=\"%s,%s,%s\"\n", format_bits( mra, dip ), dip->name, orders ? reordered_ids : dip->ids);
-                strnlen(dip->ids, MAX_LINE_LENGTH);
+                char *bits = format_bits( mra, dip );
+                n = snprintf(buffer, MAX_LINE_LENGTH, "CONF=\"%s,%s,%s\"\n", bits, dip->name, orders ? reordered_ids : dip->ids);
+                free(bits);
             } else {
                 n = snprintf(buffer, MAX_LINE_LENGTH, "CONF=\"%s,%s\"\n", format_bits( mra, dip ), dip->name);
             }
@@ -197,6 +203,7 @@ int write_arc(t_mra *mra, char *filename) {
             }
             fwrite(buffer, 1, n, out);
         } else {
+            free(dipname);
             printf("warning (%s): \"%s\" dip setting skipped (unused)\n", mra->setname, dip->name);
         }
     }

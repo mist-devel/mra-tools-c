@@ -74,24 +74,28 @@ char *get_path(char *filename) {
         *last_slash = '\0';
         return path;
     }
+    free(path);
     return NULL;
 }
 
 char *get_basename(char *filename, int strip_extension) {
-    char *basename = strndup(filename, 1024);
-    char *p = basename;
-    char *last_dot = NULL;
-    char *last_slash = NULL;
+    char *basename;
+    char *p = filename;
     char c;
     int i = 0;
+    int last_dot = -1;
+    int last_slash = -1;
 
-    while ((c = *p) && (i++ < 1024)) {
-        if (c == '.') last_dot = p;
-        if (c == '/') last_slash = p;
-        p++;
+    while ((c = *p++) && (i < 1024)) {
+        if (c == '.') last_dot = i;
+        if (c == '/') last_slash = i;
+        i++;
     }
-    if (strip_extension && last_dot) *last_dot = '\0';
-    return last_slash ? last_slash + 1 : basename;
+    basename = strndup(filename + (last_slash >= 0 ? last_slash + 1 : 0), 1024);
+    if (strip_extension && last_dot >= 0 && last_dot > last_slash)
+        basename[last_slash >= 0 ? last_dot - last_slash - 1 : last_dot] = '\0';
+
+    return basename;
 }
 
 char *get_filename(char *path, char *basename, char *extension) {
@@ -218,6 +222,13 @@ char *string_list_add(t_string_list *list, char *element) {
 
     free(elementCopy);
     return list->elements[list->n_elements - 1];
+}
+
+void string_list_free(t_string_list *list) {
+    int i;
+    for (i = 0; i < list->n_elements; i++) free(list->elements[i]);
+    free(list->elements);
+    list->n_elements = 0;
 }
 
 char *trim(char *str)

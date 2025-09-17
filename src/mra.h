@@ -109,5 +109,6 @@ int mra_load(char *filename, t_mra *mra);
 int mra_dump(t_mra *mra);
 int mra_get_next_rom0(t_mra *mra, int start_index);
 int mra_get_rom_by_index(t_mra *mra, int index, int start_pos);
+void mra_free(t_mra *mra);
 
 #endif

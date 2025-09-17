@@ -31,6 +31,7 @@ char *dos_clean_basename(char *filename, int uppercase, int maxlen);
 t_string_list *string_list_new(char *pipe_separated_list);
 char *string_list_add(t_string_list *list, char *element);
 char *string_list_to_string(t_string_list *list);
+void string_list_free(t_string_list *list);
 
 void make_fat32_compatible(char *filename, int stripslashes);
 

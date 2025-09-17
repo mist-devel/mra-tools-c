@@ -8,8 +8,8 @@
 #include "unzip.h"
 #include "utils.h"
 
-t_file *files = NULL;
-int n_files = 0;
+static t_file *files = NULL;
+static int n_files = 0;
 
 int get_file_by_crc(t_file *files, int n_files, uint32_t crc) {
     int i;
@@ -192,23 +192,8 @@ int parse_pattern(char *pattern, int **byte_offsets, int *n_src_bytes) {
     return 0;
 }
 
-int write_group(FILE *out, MD5_CTX *md5_ctx, t_part *part) {
+static int do_write_group(FILE *out, MD5_CTX *md5_ctx, t_part *part, int **byte_offsets, int *n_src_bytes, uint8_t **data, size_t *size) {
     int i;
-
-    if (!part->g.is_interleaved) {
-        printf("%s:%d: error: non interleaved groups are not implemented\n", __FILE__, __LINE__);
-        return -1;
-    }
-    if (part->g.n_parts == 0) {
-        printf("warning: empty group\n");
-        return 0;
-    }
-
-    // Allocate, load data sources and parse patterns for children of the group
-    int **byte_offsets = (int **)calloc(part->g.n_parts, sizeof(int *));
-    int *n_src_bytes = (int *)calloc(part->g.n_parts, sizeof(int));
-    uint8_t **data = (uint8_t **)calloc(part->g.n_parts, sizeof(uint8_t *));
-    size_t *size = (size_t *)calloc(part->g.n_parts, sizeof(size_t));
 
     int n_dest_bytes = part->g.width >> 3;  // number of bytes per value defined by width attribute
 
@@ -269,11 +254,43 @@ int write_group(FILE *out, MD5_CTX *md5_ctx, t_part *part) {
         }
     }
 
-    if (write_to_rom(out, md5_ctx, buffer, total_bytes, part)) {
+    int res = write_to_rom(out, md5_ctx, buffer, total_bytes, part);
+    free(buffer);
+    if (res) {
         return -1;
     }
 
     return 0;
+}
+
+int write_group(FILE *out, MD5_CTX *md5_ctx, t_part *part) {
+    if (!part->g.is_interleaved) {
+        printf("%s:%d: error: non interleaved groups are not implemented\n", __FILE__, __LINE__);
+        return -1;
+    }
+    if (part->g.n_parts == 0) {
+        printf("warning: empty group\n");
+        return 0;
+    }
+
+    // Allocate, load data sources and parse patterns for children of the group
+    int **byte_offsets = (int **)calloc(part->g.n_parts, sizeof(int *));
+    int *n_src_bytes = (int *)calloc(part->g.n_parts, sizeof(int));
+    uint8_t **data = (uint8_t **)calloc(part->g.n_parts, sizeof(uint8_t *));
+    size_t *size = (size_t *)calloc(part->g.n_parts, sizeof(size_t));
+    memset(byte_offsets, 0, part->g.n_parts * sizeof(int *));
+
+    int res = do_write_group(out, md5_ctx, part, byte_offsets, n_src_bytes, data, size);
+
+    for (int i = 0; i < part->g.n_parts; i++)
+        if (byte_offsets[i]) free(byte_offsets[i]);
+
+    free(byte_offsets);
+    free(n_src_bytes);
+    free(data);
+    free(size);
+    return res;
+
 }
 
 static char *get_zip_filename(char *filename, t_string_list *dirs) {
@@ -298,6 +315,20 @@ static char *get_zip_filename(char *filename, t_string_list *dirs) {
     return NULL;
 }
 
+static void free_files() {
+    int i;
+
+    if (!files) return;
+    for (i = 0; i < n_files; i++) {
+        if (files[i].name) free(files[i].name);
+        if (files[i].data) free(files[i].data);
+        files[i].name = files[i].data = 0;
+    }
+    free(files);
+    files = 0;
+    n_files = 0;
+}
+
 int write_rom(t_rom *rom, t_string_list *dirs, char *rom_filename) {
     char *zip_filename;
     int i, res;
@@ -316,6 +347,7 @@ int write_rom(t_rom *rom, t_string_list *dirs, char *rom_filename) {
             printf("Uncompressing zip file: %s\n", zip_filename);
         }
         res = unzip_file(zip_filename, &files, &n_files);
+        free(zip_filename);
         if (res != 0) {
             printf("warning: failed to unzip file: %s\n", zip_filename);
         }
@@ -339,6 +371,7 @@ int write_rom(t_rom *rom, t_string_list *dirs, char *rom_filename) {
 
     if (out == NULL) {
         fprintf(stderr, "Couldn't open %s for writing!\n", rom_filename);
+        free_files();
         return -1;
     }
 
@@ -352,6 +385,8 @@ int write_rom(t_rom *rom, t_string_list *dirs, char *rom_filename) {
             write_part(out, &md5_ctx, part);
         }
     }
+
+    free_files();
 
     // Apply patches before we close the file
     for(i = 0; i < rom->n_patches; i++) {
