@@ -521,6 +521,7 @@ void mra_free(t_mra *mra) {
     if (mra->rbf.alt_name) free(mra->rbf.alt_name);
     if (mra->buttons.names) free(mra->buttons.names);
     if (mra->buttons.defaults) free(mra->buttons.defaults);
+    string_list_free(&mra->categories);
 
     for (i = 0; i < mra->n_roms; i++) {
         if (mra->roms[i].md5) free(mra->roms[i].md5);

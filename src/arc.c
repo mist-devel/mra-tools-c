@@ -195,7 +195,9 @@ int write_arc(t_mra *mra, char *filename) {
                 n = snprintf(buffer, MAX_LINE_LENGTH, "CONF=\"%s,%s,%s\"\n", bits, dip->name, orders ? reordered_ids : dip->ids);
                 free(bits);
             } else {
-                n = snprintf(buffer, MAX_LINE_LENGTH, "CONF=\"%s,%s\"\n", format_bits( mra, dip ), dip->name);
+                char *bits = format_bits( mra, dip );
+                n = snprintf(buffer, MAX_LINE_LENGTH, "CONF=\"%s,%s\"\n", bits, dip->name);
+                free(bits);
             }
             if (n >= MAX_LINE_LENGTH) {
                 printf("%s:%d: warning (%s): line was truncated while writing in ARC file!\n", __FILE__, __LINE__, mra->setname);
