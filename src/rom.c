@@ -141,6 +141,7 @@ int write_part(FILE *out, MD5_CTX *md5_ctx, t_part *part) {
     if (write_to_rom(out, md5_ctx, data, size, part)) {
         return -1;
     }
+    return 0;
 }
 
 /*
@@ -347,10 +348,10 @@ int write_rom(t_rom *rom, t_string_list *dirs, char *rom_filename) {
             printf("Uncompressing zip file: %s\n", zip_filename);
         }
         res = unzip_file(zip_filename, &files, &n_files);
-        free(zip_filename);
         if (res != 0) {
             printf("warning: failed to unzip file: %s\n", zip_filename);
         }
+        free(zip_filename);
     }
 
     if (verbose) {
