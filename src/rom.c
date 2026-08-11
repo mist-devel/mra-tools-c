@@ -298,10 +298,9 @@ static char *get_zip_filename(char *filename, t_string_list *dirs) {
     int i;
 
     for (i = 0; i < dirs->n_elements; i++) {
-        char *result;
-        int length = strnlen(dirs->elements[i], 1024) + strnlen(filename, 1024);
-        result = (char *)malloc(sizeof(char) * (length + 2));
-        snprintf(result, 2050, "%s/%s", dirs->elements[i], filename);
+        size_t length = strnlen(dirs->elements[i], 1024) + strnlen(filename, 1024) + 2;
+        char *result = (char *)malloc(sizeof(char) * length);
+        snprintf(result, length, "%s/%s", dirs->elements[i], filename);
 
         if (file_exists(result)) {
             return result;
